@@ -1,0 +1,190 @@
+---
+title: "MiniProject"
+author: "S/19/803"
+date: "2025-05-25"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+#Load Data set
+```{r}
+practice <- read.csv("F:/4th year  Semester_1st/STA4053/Project/athletic.csv")
+#head(practice )
+
+#Find a Missing Values
+sum(is.na(practice))
+
+#column Names
+names(practice)
+
+#number of row * number of columns
+dim(practice)
+
+```
+
+#data summary
+```{r}
+#mean
+apply(practice, 2, mean)
+#variance
+apply(practice,2,var)
+#corr_matrix
+cor(practice, method = "spearman")
+#Standardizing each variable
+scaled_df <- apply(practice, 2, scale)
+head(scaled_df)
+```
+
+# Checking the variable type
+```{r}
+numerical_sale <- practice[1:16,]
+
+# normalizing data
+data_normalized <- scale(numerical_sale)
+
+## Correlation matrix
+cor_matrix <- cor(data_normalized)
+
+data.pca <- princomp(cor_matrix)
+summary(data.pca)
+
+e <- eigen(cor_matrix)
+
+```
+
+```{r}
+library(factoextra)
+pca_result<-prcomp(cor_matrix,center = TRUE,scale = TRUE) 
+fviz_eig(pca_result, addlabels = TRUE, ylim = c(0, 50))  
+
+```
+
+```{r}
+#install.packages("ggcorrplot")
+library(ggcorrplot)
+# normalizing data
+data_normalized <- scale(practice)
+## Correlation matrix
+cor_matrix <- cor(data_normalized)
+## Graphical view of Correlation Matrix
+ggcorrplot(cor_matrix)
+```
+
+#Principal Component Analysis (PCA)
+```{r}
+pca_result <- prcomp(practice, scale = TRUE)
+names(pca_result)
+
+## means
+pca_result$cente
+
+# standard deviations
+pca_result$scale
+```
+
+#pca_result
+```{r}
+scaled_data <- scale(practice)
+pca_result <- prcomp(scaled_data, center = TRUE, scale. = TRUE)
+summary(pca_result)
+```
+
+# biplot
+```{r}
+biplot(pca_result, scale = 0.1, cex = 0.9, col = c("blue", "red"))
+```
+
+#autoplot
+```{r}
+#install.packages("ggfortify")
+library(ggfortify)
+autoplot(pca_result, loadings = TRUE, loadings.label = TRUE)
+```
+
+# biplot of the variables
+```{r}
+fviz_pca_var(data.pca, col.var = "black")
+```
+
+#Interpretation using illustrative
+```{r}
+# Scree plot to choose number of components
+screeplot(pca_result, type = "lines")
+```
+```{r}
+## Contribution of each Variable
+fviz_cos2(data.pca, choice = "var", axes = 1:4)
+```
+
+#Factor Analysis
+```{r}
+#install.packages(c("psych", "readxl", "GPArotation"))
+library(psych)
+library(readxl)
+library(GPArotation)
+
+# Select only numeric variables for FA
+fa_data <- practice[, c("Age", "B.0..G.1.", "MealPlan", "Weight", "Height",
+                      "X100m.s.", "L_Jumb.m.", "H_Jumb.m.", "Pracice.H.", "fee")]
+
+# Check suitability for factor analysis
+KMO(fa_data)
+cortest.bartlett(fa_data)  
+
+# Perform factor analysis
+fa_result <- fa(fa_data, nfactors = 3, rotate = "varimax", fm = "ml")
+
+```
+
+```{r}
+
+# View factor loadings
+print(fa_result$loadings, cutoff = 0.3)
+
+# Visualize factor structure
+fa.diagram(fa_result)
+
+```
+
+#Visualize with factoextra (for PCA-style biplot)
+```{r}
+fviz_pca_var(prcomp(practice, scale. = TRUE), 
+             col.var = "contrib", 
+             repel = TRUE,
+             title = "Variable Loadings (PCA approximation)")
+```
+
+#Structural Equation Modeling
+```{r}
+# Load libraries
+library(lavaan)
+library(semPlot)
+library(readxl)
+
+#Define SEM model
+sem_model <- '
+  Physical =~ X100m.s. + L_Jumb.m. + H_Jumb.m.
+  Body =~ Weight + Height
+  Training =~ Pracice.H. + fee
+
+  Physical ~ Training + Body
+'
+#Fit the model
+fit <- sem(sem_model, data = practice)
+
+# Summary of fit
+summary(fit, fit.measures = TRUE, standardized = TRUE)
+
+#Plot the SEM diagram
+semPaths(fit, 
+         what = "std",        # Standardized estimates
+         layout = "tree",     # Layout style
+         edge.label.cex = 1,  # Label size
+         curvePivot = TRUE, 
+         fade = FALSE, 
+         sizeMan = 6, 
+         sizeLat = 8, 
+         nCharNodes = 0)      # Show full variable names
+
+```
